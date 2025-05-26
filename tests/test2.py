@@ -137,11 +137,11 @@ def main():
             camera_position[0] -= forward[0] * move_speed
             camera_position[1] -= forward[1] * move_speed
             camera_position[2] -= forward[2] * move_speed
-        if keys[pygame.K_a]:
+        if keys[pygame.K_d]:
             camera_position[0] -= right[0] * move_speed
             camera_position[1] -= right[1] * move_speed
             camera_position[2] -= right[2] * move_speed
-        if keys[pygame.K_d]:
+        if keys[pygame.K_a]:
             camera_position[0] += right[0] * move_speed
             camera_position[1] += right[1] * move_speed
             camera_position[2] += right[2] * move_speed
