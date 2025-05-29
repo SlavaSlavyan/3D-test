@@ -155,10 +155,8 @@ def main():
             pygame.mouse.set_pos((WIDTH // 2, HEIGHT // 2))
             new_pos = pygame.mouse.get_pos()
             
-            camera_yaw -= (old_pos[0] - new_pos[0]) / 100
-            camera_y -= (old_pos[1] - new_pos[1]) / 100
-            
-        #camera_pitch = camera_y*math.cos(camera_yaw)
+            camera_yaw -= (old_pos[0] - new_pos[0]) / 100     
+            camera_pitch -= (old_pos[1] - new_pos[1]) / 100  
         #camera_roll = camera_y*-math.sin(camera_yaw)
         
         # Проецируем вершины, пропуская точки за камерой
