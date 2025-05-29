@@ -44,6 +44,8 @@ camera_pitch = 0
 camera_yaw = 0
 fov = 90
 
+camera_input = False
+
 def rotate_point(x, y, z, pitch, yaw):
     # Вращение точки вокруг оси X (pitch)
     cosy = math.cos(pitch)
@@ -77,6 +79,9 @@ def project_point(point, camera_pos, pitch, yaw, fov, width, height):
     return (int(px), int(py)), z
 
 def main():
+    
+    global camera_input, camera_pitch, camera_position, camera_yaw, fov
+    
     running = True
 
     while running:
@@ -86,6 +91,53 @@ def main():
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    camera_input = not camera_input
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if event.button == 4:  # прокрутка колесика вверх
+                    fov += 1
+                elif event.button == 5:  # прокрутка колесика вниз
+                    fov -= 1
+        
+        keys = pygame.key.get_pressed()
+        
+        if keys[pygame.K_w]:
+            camera_position[0] = camera_position[0] - math.sin(camera_yaw)/20
+            camera_position[2] = camera_position[2] + math.cos(camera_yaw)/20
+        
+        if keys[pygame.K_s]:
+            camera_position[0] = camera_position[0] + math.sin(camera_yaw)/20
+            camera_position[2] = camera_position[2] - math.cos(camera_yaw)/20
+        
+        if keys[pygame.K_a]:
+            camera_position[2] = camera_position[2] - math.sin(camera_yaw)/20
+            camera_position[0] = camera_position[0] - math.cos(camera_yaw)/20
+        
+        if keys[pygame.K_d]:
+            camera_position[2] = camera_position[2] + math.sin(camera_yaw)/20
+            camera_position[0] = camera_position[0] + math.cos(camera_yaw)/20
+            
+        if keys[pygame.K_UP]:
+            camera_position[0] += 0.1
+            
+        if keys[pygame.K_DOWN]:
+            camera_position[0] -= 0.1
+        
+        if keys[pygame.K_LEFT]:
+            camera_position[2] += 0.1
+        
+        if keys[pygame.K_RIGHT]:
+            camera_position[2] -= 0.1
+            
+        if camera_input:
+            
+            old_pos = pygame.mouse.get_pos()
+            pygame.mouse.set_pos((WIDTH//2,HEIGHT//2))
+            new_pos = pygame.mouse.get_pos()
+            
+            camera_yaw = camera_yaw - (old_pos[0] - new_pos[0])/100
+            #camera_pitch = camera_pitch - (old_pos[1] - new_pos[1])/100
 
         # Проецируем вершины, пропуская точки за камерой
         projected_vertices = []
@@ -108,8 +160,25 @@ def main():
 
         for _, poly in polygons_depth:
             point_list = [projected_vertices[i] for i in poly]
-            pygame.draw.polygon(screen, GRAY, point_list)
-            pygame.draw.polygon(screen, WHITE, point_list, 1)
+            try:
+                pygame.draw.polygon(screen, GRAY, point_list)
+                pygame.draw.polygon(screen, WHITE, point_list, 1)
+            except:
+                pass
+                
+         # Отображение информации
+        font = pygame.font.SysFont(None, 24)
+        instructions = [
+            f"Pitch: {camera_pitch:.2f} rad",
+            f"Yaw: {camera_yaw:.2f} rad",
+            "Camera Pos: [{:.2f}, {:.2f}, {:.2f}]".format(*camera_position),
+            f"FOV: {fov} deg",
+            math.sin(camera_yaw),
+            math.cos(camera_yaw)
+        ]
+        for i, text in enumerate(instructions):
+            rendered = font.render(str(text), True, WHITE)
+            screen.blit(rendered, (10, 10 + i * 20))
 
         pygame.display.flip()
 
