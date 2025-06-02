@@ -224,9 +224,9 @@ def main():
         keys = pygame.key.get_pressed()
 
         # Camera rotation control
-        if keys[pygame.K_LEFT]:
-            camera.yaw -= rot_speed
         if keys[pygame.K_RIGHT]:
+            camera.yaw -= rot_speed
+        if keys[pygame.K_LEFT]:
             camera.yaw += rot_speed
         if keys[pygame.K_UP]:
             camera.pitch -= rot_speed
@@ -248,17 +248,17 @@ def main():
         move_vec = (0.0, 0.0, 0.0)
 
         if keys[pygame.K_w]:
-            move_vec = vec_add(move_vec, (forward[0], 0, forward[2]))
+            camera.x -= math.sin(camera.yaw/180*math.pi) / 20
+            camera.z += math.cos(camera.yaw/180*math.pi) / 20
         if keys[pygame.K_s]:
-            move_vec = vec_add(move_vec, (-forward[0], 0, -forward[2]))
+            camera.x += math.sin(camera.yaw/180*math.pi) / 20
+            camera.z -= math.cos(camera.yaw/180*math.pi) / 20
         if keys[pygame.K_a]:
-            move_vec = vec_add(move_vec, (-right[0], 0, -right[2]))
+            camera.x -= math.cos(camera.yaw/180*math.pi) / 20
+            camera.z -= math.sin(camera.yaw/180*math.pi) / 20
         if keys[pygame.K_d]:
-            move_vec = vec_add(move_vec, (right[0], 0, right[2]))
-
-        # Normalize the move vector so diagonal movement isn't faster
-        move_vec = normalize(move_vec)
-        move_vec = vec_scale(move_vec, move_speed)
+            camera.x += math.cos(camera.yaw/180*math.pi) / 20
+            camera.z += math.sin(camera.yaw/180*math.pi) / 20
 
         # Vertical movement
         if keys[pygame.K_SPACE]:

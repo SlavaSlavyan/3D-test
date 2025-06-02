@@ -173,19 +173,10 @@ def cross(v1, v2):
             v1[2]*v2[0] - v1[0]*v2[2],
             v1[0]*v2[1] - v1[1]*v2[0])
 
-# Vector addition
-def vec_add(v1, v2):
-    return (v1[0]+v2[0], v1[1]+v2[1], v1[2]+v2[2])
-
 # Vector subtraction
 def vec_sub(v1, v2):
     return (v1[0]-v2[0], v1[1]-v2[1], v1[2]-v2[2])
 
-# Vector scale
-def vec_scale(v, s):
-    return (v[0]*s, v[1]*s, v[2]*s)
-
-# Get camera direction vectors for movement relative to yaw and pitch (ignoring roll for movement)
 def get_camera_direction_vectors(camera):
     yaw_rad = math.radians(camera.yaw)
     pitch_rad = math.radians(camera.pitch)
@@ -194,12 +185,10 @@ def get_camera_direction_vectors(camera):
     forward = (math.sin(yaw_rad)*math.cos(pitch_rad), -math.sin(pitch_rad), math.cos(yaw_rad)*math.cos(pitch_rad))
     forward = normalize(forward)
 
-    # Right vector (perpendicular to forward, ignoring y)
-    up_vector = (0, 1, 0)
+    up_vector = (0,1,0)
     right = cross(forward, up_vector)
     right = normalize(right)
 
-    # Recompute forward vector to be perpendicular to right and up
     forward = cross(up_vector, right)
     forward = normalize(forward)
 
@@ -245,7 +234,7 @@ def main():
         # Movement relative to camera direction (x and z only)
         forward, right = get_camera_direction_vectors(camera)
 
-        move_vec = (0.0, 0.0, 0.0)
+        move_vec = [0.0, 0.0, 0.0]
 
         if keys[pygame.K_w]:
             camera.x -= math.sin(camera.yaw/180*math.pi) / 20
@@ -262,45 +251,60 @@ def main():
 
         # Vertical movement
         if keys[pygame.K_SPACE]:
-            move_vec = vec_add(move_vec, (0, move_speed, 0))
+            move_vec[1] += move_speed
         if keys[pygame.K_LSHIFT] or keys[pygame.K_RSHIFT]:
-            move_vec = vec_add(move_vec, (0, -move_speed, 0))
+            move_vec[1] -= move_speed
 
-        # Apply movement
         camera.move(move_vec[0], move_vec[1], move_vec[2])
 
         # Clear screen
         screen.fill(BLACK)
 
-        # Draw cube
         # Transform cube vertices to camera space and project to 2D
         projected_vertices = []
+        camera_space_vertices = []  # Store for normal calculations
         for vertex in cube_vertices:
-            # World to camera space
             cam_point = camera.world_to_camera(vertex)
-            # Cull points behind camera (simple)
+            camera_space_vertices.append(cam_point)
+
             if cam_point[2] <= 0:
                 projected_vertices.append(None)
             else:
                 p = project(cam_point)
                 projected_vertices.append(p)
 
-        # Draw faces with simple painter's algorithm (sort faces by avg depth)
+        # Back-face culling and sorting faces by average depth
         face_depth = []
-        for i, face in enumerate(cube_faces):
-            z_max = float('-inf')  # Start with the smallest possible value
-            valid = True
-            for idx in face:
-                if projected_vertices[idx] is None:
-                    valid = False
-                    break
-                world_v = camera.world_to_camera(cube_vertices[idx])
-                z_max = max(z_max, world_v[2])  # Use the maximum z value
-            if not valid:
-                continue
-            face_depth.append((z_max, i))  # Store the max z value for sorting
+        culled_faces = []
 
-        face_depth.sort(reverse=True)  # Sort by max z value
+        for i, face in enumerate(cube_faces):
+            pts = [camera_space_vertices[idx] for idx in face]
+
+            # Skip faces with any vertex behind camera
+            if any(p[2] <= 0 for p in pts):
+                continue
+
+            # Compute normal via cross product (in camera space)
+            v1 = vec_sub(pts[1], pts[0])
+            v2 = vec_sub(pts[2], pts[0])
+            normal = cross(v1, v2)
+            normal = normalize(normal)
+
+            # Vector from camera to face (camera at origin in camera space)
+            to_face = (pts[0][0], pts[0][1], pts[0][2])
+
+            # If dot(normal, to_face) >= 0, face is facing away, cull it
+            dot = normal[0]*to_face[0] + normal[1]*to_face[1] + normal[2]*to_face[2]
+            if dot >= 0:
+                continue
+
+            # Average depth for sorting
+            avg_depth = sum(p[2] for p in pts) / len(pts)
+
+            face_depth.append((avg_depth, i))
+
+        # Sort by average depth descending (farther faces first)
+        face_depth.sort(reverse=True)
 
         for _, i in face_depth:
             face = cube_faces[i]
@@ -308,10 +312,9 @@ def main():
             if None in point_list:
                 continue
             pygame.draw.polygon(screen, face_colors[i], point_list)
-            pygame.draw.polygon(screen, BLACK, point_list, 1)  # black border
+            pygame.draw.polygon(screen, BLACK, point_list, 1)  # border
 
-
-        # Draw debug info box
+        # Debug info box
         debug_rect = pygame.Rect(WIDTH - 220, 10, 210, 100)
         pygame.draw.rect(screen, DEBUG_BG, debug_rect)
         pygame.draw.rect(screen, GRAY, debug_rect, 1)
@@ -339,7 +342,6 @@ def main():
 
     pygame.quit()
     sys.exit()
-
 
 if __name__ == "__main__":
     main()
