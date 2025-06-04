@@ -8,9 +8,9 @@ pygame.init()
 # Screen settings
 WIDTH, HEIGHT = 800, 600
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
-pygame.display.set_caption("3D Cube with Camera Control")
+pygame.display.set_caption("3D Cube with Camera Control") 
 
-# Colors
+# Colors 
 WHITE = (255, 255, 255)
 GRAY = (100, 100, 100)
 BLACK = (0, 0, 0)
@@ -19,6 +19,8 @@ DEBUG_TEXT_COLOR = (200, 200, 200)
 
 # Font for debug text
 font = pygame.font.SysFont("consolas", 14)
+
+
 
 # Cube vertices (x, y, z)
 cube_vertices = [
@@ -59,6 +61,8 @@ class Camera:
         self.yaw = yaw
         self.pitch = pitch
         self.roll = roll
+
+        self.camera_input = False
 
     def get_rotation_matrix(self):
         # Convert degrees to radians
@@ -195,6 +199,8 @@ def get_camera_direction_vectors(camera):
     return forward, right
 
 def main():
+
+    
     clock = pygame.time.Clock()
     camera = Camera()
 
@@ -209,6 +215,14 @@ def main():
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
+            
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    camera.camera_input = not camera.camera_input
+                    pygame.mouse.set_pos((WIDTH//2,HEIGHT//2))
+                    pygame.mouse.get_rel()
+                    pygame.event.set_grab(camera.camera_input)
+                    pygame.mouse.set_visible(not camera.camera_input)
 
         keys = pygame.key.get_pressed()
 
@@ -256,6 +270,14 @@ def main():
             move_vec[1] -= move_speed
 
         camera.move(move_vec[0], move_vec[1], move_vec[2])
+
+
+        if camera.camera_input:
+
+            rel = pygame.mouse.get_rel()
+
+            camera.yaw -= rel[0]/2
+            camera.pitch -= rel[1]/2
 
         # Clear screen
         screen.fill(BLACK)
