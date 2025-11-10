@@ -17,6 +17,7 @@ class Objects:
             points: list,
             polygons: list,
             position: list,
+            rotate: list
         ):
             
             self.name = name
@@ -25,6 +26,7 @@ class Objects:
                 self.points.append(points[i])
             self.polygons = polygons
             self.position = position
+            self.rotate = rotate
             #print(f"{self.name}\n{self.points}\n{self.polygons}\n{self.position}")
 
 class Display:
@@ -37,7 +39,7 @@ class Display:
         turtle.pencolor(1,1,1)
         turtle.hideturtle()
         turtle.tracer(0)
-        turtle.pensize(2)
+        turtle.pensize(1)
     
     def main(self,m):
         
@@ -59,18 +61,72 @@ class Display:
             [0,0,m.config["FAR"]/(m.config["FAR"]-m.config["NEAR"]),1],
             [0,0,-m.config["FAR"]*m.config["NEAR"]/(m.config["FAR"]-m.config["NEAR"]),0]
         ])
+
+        rotate_matrix_x = numpy.array([
+            [1,0,0],
+            [0,math.cos(obj.rotate[0]),-math.sin(obj.rotate[0])],
+            [0,math.sin(obj.rotate[0]),math.cos(obj.rotate[0])]
+        ])
+
+        rotate_matrix_y = numpy.array([
+            [math.cos(obj.rotate[1]),0,math.sin(obj.rotate[1])],
+            [0,1,0],
+            [-math.sin(obj.rotate[1]),0,math.cos(obj.rotate[1])]
+        ])
+
+        rotate_matrix_z = numpy.array([
+            [math.cos(obj.rotate[2]),-math.sin(obj.rotate[2]),0],
+            [math.sin(obj.rotate[2]),math.cos(obj.rotate[2]),0],
+            [0,0,1]
+        ])
+
+        rotate_matrix = rotate_matrix_x * rotate_matrix_y * rotate_matrix_z
         
         #print(f"{obj.name}\n{obj.points}\n{obj.polygons}\n{obj.position}")
         
         polygons = []
         
         for polygon in obj.polygons:
-            polygons.append([])
+
+            new_polygon = []
             
             for point_id in polygon:
-                polygons[-1].append(numpy.array(obj.points[point_id].copy()) + obj.position)
-                polygons[-1][-1] = numpy.append(polygons[-1][-1],1)
+
+                new_polygon.append(numpy.array(obj.points[point_id].copy()))
+                new_polygon[-1] = rotate_matrix_x @ new_polygon[-1]
+                new_polygon[-1] = rotate_matrix_y @ new_polygon[-1]
+                new_polygon[-1] = rotate_matrix_z @ new_polygon[-1]
+                new_polygon[-1] = new_polygon[-1] + obj.position
+                new_polygon[-1] = numpy.append(new_polygon[-1],1)
+            
+            #print(new_polygon)
+            
+            A = new_polygon[-1][:3] - new_polygon[0][:3]
+            B = new_polygon[1][:3] - new_polygon[0][:3]
+
+            normal = numpy.cross(A,B)
+            normal = normal/numpy.linalg.norm(normal)
+
+            to_cam = new_polygon[0][:3] + new_polygon[1][:3] + new_polygon[2][:3] / 3
+            to_cam = to_cam/numpy.linalg.norm(to_cam)
+
+            if numpy.dot(normal,to_cam) < 0:
                 
+                polygons.append(new_polygon)
+
+        #print(polygons[0][-1][:3],polygons[0][0][:3])
+        #print(numpy.cross(polygons[0][-1][:3],polygons[0][0][:3]))
+
+        #p = 10
+        #ac = polygons[p][-1][:3] - polygons[p][0][:3]
+        #ab = polygons[p][1][:3] - polygons[p][0][:3]
+        #n = numpy.cross(ab,ac)
+
+        #c = -polygons[p][0][:3] + polygons[p][1][:3] + polygons[p][2][:3] / 3
+        #c = c/numpy.linalg.norm(c)
+
+        #print(numpy.dot(n,c) > 0)
+
         projection_polygons = []
             
         for polygon in polygons:
@@ -101,6 +157,35 @@ class Display:
                     polygon[point][0]*self.width/2,
                     polygon[point][1]*self.height/2
                 )
+
+        
+        
+        #turtle.teleport(
+        #    projection_polygons[p][0][0]*self.width/2,
+        #    projection_polygons[p][0][1]*self.height/2
+        #)
+
+        #turtle.pencolor("red")
+        #turtle.circle(5)
+        #turtle.pencolor("white")
+
+        #turtle.teleport(
+        #    projection_polygons[p][1][0]*self.width/2,
+        #    projection_polygons[p][1][1]*self.height/2
+        #)
+
+        #turtle.pencolor("green")
+        #turtle.circle(5)
+        #turtle.pencolor("white")
+
+        #turtle.teleport(
+        #    projection_polygons[p][2][0]*self.width/2,
+        #    projection_polygons[p][2][1]*self.height/2
+        #)
+
+        #turtle.pencolor("blue")
+        #turtle.circle(5)
+        #turtle.pencolor("white")
             
 class Main:
     
@@ -108,8 +193,8 @@ class Main:
         
         self.config = {
             "FOV":90,
-            "FAR":100,
-            "NEAR":0.01
+            "FAR":100000,
+            "NEAR":0.000000000001
         }
         
         self.Objects = Objects()
@@ -120,45 +205,54 @@ class Main:
         self.Objects.list.append(self.Objects.Create(
             "TestCube",
             [
-                [-1.0, 1.0, 1.0],
-                [-1.0,-1.0, 1.0],
-                [ 1.0,-1.0, 1.0],
                 [ 1.0, 1.0, 1.0],
-                [-1.0, 1.0,-1.0],
-                [-1.0,-1.0,-1.0],
+                [-1.0, 1.0, 1.0],
+                [ 1.0,-1.0, 1.0],
+                [ 1.0, 1.0,-1.0],
                 [ 1.0,-1.0,-1.0],
-                [ 1.0, 1.0,-1.0]
+                [-1.0, 1.0,-1.0],
+                [-1.0,-1.0, 1.0],
+                [-1.0,-1.0,-1.0]
             ],
             [
-                [3,1,0],
-                [3,2,1],
-                [3,6,2],
-                [3,7,6],
-                [3,0,4],
-                [3,4,7],
-                [5,1,0],
-                [5,0,4],
-                [5,1,2],
-                [5,2,6],
-                [5,4,7],
-                [5,7,6]
+                [0,2,6],
+                [0,6,1],
+                [0,4,2],
+                [0,3,4],
+                [0,5,3],
+                [0,1,5],
+                [7,2,4],
+                [7,6,2],
+                [7,1,6],
+                [7,5,1],
+                [7,4,3],
+                [7,3,5]
             ],
-            [0,0,2]
+            [0,0,5],
+            [math.radians(180),math.radians(45),0]
         ))
-        
+
         theta = 0
+
+        for point in range(len(self.Objects.list[0].points)):
+            self.Objects.list[0].points[point] = self.Objects.list[0].points[point] * numpy.array([2,2,2])
         
+        print(self.Objects.list[0].points)
+
         while True:
             
             self.Display.main(self)
             #exit()
+
+            self.Objects.list[0].rotate[0] = math.radians(theta)
+            #self.Objects.list[0].rotate[1] = math.radians(theta)
+            #self.Objects.list[0].rotate[2] = math.radians(theta)
+
+            #self.Objects.list[0].position[2] = 3+math.sin(theta/10)
+            #self.Objects.list[0].position[0] = math.cos(theta/15)*20
             
-            self.Objects.list[0].position[0] = math.sin(theta)*5
-            self.Objects.list[0].position[1] = math.cos(theta*2.5)*2
-            self.Objects.list[0].position[2] = 5+math.cos(theta*3.7)
-            
-            theta += 0.01
             time.sleep(0.01)
+            theta += 1
     
 M = Main()
 M.main()
