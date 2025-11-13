@@ -193,8 +193,8 @@ class Main:
         
         self.config = {
             "FOV":90,
-            "FAR":100000,
-            "NEAR":0.000000000001
+            "FAR":64,
+            "NEAR":0.1
         }
         
         self.Objects = Objects()
@@ -228,31 +228,63 @@ class Main:
                 [7,4,3],
                 [7,3,5]
             ],
-            [0,0,5],
-            [math.radians(180),math.radians(45),0]
+            [5,0,5],
+            [math.radians(0),math.radians(0),0]
+        ))
+        
+        self.Objects.list.append(self.Objects.Create(
+            "TestCube",
+            [
+                [ 1.0, 1.0, 1.0],
+                [-1.0, 1.0, 1.0],
+                [ 1.0,-1.0, 1.0],
+                [ 1.0, 1.0,-1.0],
+                [ 1.0,-1.0,-1.0],
+                [-1.0, 1.0,-1.0],
+                [-1.0,-1.0, 1.0],
+                [-1.0,-1.0,-1.0]
+            ],
+            [
+                [0,2,6],
+                [0,6,1],
+                [0,4,2],
+                [0,3,4],
+                [0,5,3],
+                [0,1,5],
+                [7,2,4],
+                [7,6,2],
+                [7,1,6],
+                [7,5,1],
+                [7,4,3],
+                [7,3,5]
+            ],
+            [-5,0,5],
+            [math.radians(0),math.radians(0),0]
         ))
 
         theta = 0
 
-        for point in range(len(self.Objects.list[0].points)):
-            self.Objects.list[0].points[point] = self.Objects.list[0].points[point] * numpy.array([2,2,2])
-        
-        print(self.Objects.list[0].points)
-
         while True:
+            
+            start = time.time()
             
             self.Display.main(self)
             #exit()
 
-            self.Objects.list[0].rotate[0] = math.radians(theta)
+            #self.Objects.list[0].rotate[0] = math.radians(theta)
             #self.Objects.list[0].rotate[1] = math.radians(theta)
             #self.Objects.list[0].rotate[2] = math.radians(theta)
 
             #self.Objects.list[0].position[2] = 3+math.sin(theta/10)
             #self.Objects.list[0].position[0] = math.cos(theta/15)*20
-            
-            time.sleep(0.01)
+
             theta += 1
+            
+            end = time.time()
+            
+            
+            if end - start < 1/60:
+                time.sleep(1/60 - (end - start))
     
 M = Main()
 M.main()
