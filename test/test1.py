@@ -271,11 +271,11 @@ class Main:
             self.Display.main(self)
             #exit()
 
-            #self.Objects.list[0].rotate[0] = math.radians(theta)
+            self.Objects.list[0].rotate[0] = math.radians(theta)
             #self.Objects.list[0].rotate[1] = math.radians(theta)
             #self.Objects.list[0].rotate[2] = math.radians(theta)
 
-            #self.Objects.list[0].position[2] = 3+math.sin(theta/10)
+            self.Objects.list[1].position[2] = 3+math.sin(theta/10)
             #self.Objects.list[0].position[0] = math.cos(theta/15)*20
 
             theta += 1

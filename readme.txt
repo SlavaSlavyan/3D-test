@@ -2,3 +2,4 @@
 
 Библиотеки:
 numpy
+pygame
